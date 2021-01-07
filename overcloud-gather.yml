@@ -1,0 +1,77 @@
+
+- hosts:
+  - Controller
+  - Compute
+  - CephStorage
+  gather_facts: false
+  become: yes
+  vars:
+    case_nr: 7777777
+    log_days: 4
+    log_size: 4096
+    upload: no
+    remove_local: no
+  tasks:
+    - name: Create remote destination directory
+      tempfile:
+        prefix: mcollector
+        state: directory
+      register: rem_temp_dir
+
+    - name: Take sosreport
+      command: "sosreport --log-size {{ log_size }} --batch --case-id {{ case_nr }} --tmp-dir={{ rem_temp_dir.path }}"
+      changed_when: false
+
+    - name: Create local destination directory
+      become: no
+      local_action:
+        module: tempfile
+        state: directory
+        prefix: mcollector
+      run_once: true
+      register: loc_temp_dir
+
+    - name: Create file list to fetch
+      shell: "ls -1 {{ rem_temp_dir.path }}"
+      register: log_collect
+      changed_when: false
+
+    - name: Place all in "{{ loc_temp_dir.path }}"
+      fetch:
+        src: "{{ rem_temp_dir.path}}/{{ item }}"
+        dest: "{{ loc_temp_dir.path }}/"
+        fail_on_missing: no
+        flat: yes
+        validate_checksum: yes
+      with_items:
+        - "{{ log_collect.stdout_lines }}"
+
+    - name: Create file list to upload to case
+      shell: "ls -1 {{ loc_temp_dir.path }}"
+      register: all_files
+      changed_when: false
+      delegate_to: localhost
+      run_once: true
+      when:
+        - upload|bool
+
+    - name: "Upload created files to case {{ case_nr }}"
+      command: "redhat-support-tool addattachment -c {{ case_nr }} {{ loc_temp_dir.path }}/{{ item }}"
+      with_items:
+        - "{{ all_files.stdout_lines }}"
+      delegate_to: localhost
+      run_once: true
+      when:
+        - upload|bool
+
+    - name: Remove remote destination directory
+      file:
+        path: "{{ rem_temp_dir.path }}"
+        state: absent
+
+    - name: Remove local destination directory
+      file:
+        path: "{{ loc_temp_dir.path }}"
+        state: absent
+      when:
+        - remove_local|bool
