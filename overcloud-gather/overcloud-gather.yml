@@ -18,8 +18,6 @@
       register: rem_temp_dir
 
     - name: Take sosreport
-      #command: "sosreport --log-size {{ log_size }} -k logs.log_days={{ log_days }} --batch --case-id {{ case_nr }} --tmp-dir={{ rem_temp_dir_path }}"
-      #command: "sosreport --all-logs --batch --case-id {{ case_nr }} --tmp-dir={{ rem_temp_dir_path }}"
       command: "sosreport --log-size {{ log_size }} --batch --case-id {{ case_nr }} --tmp-dir={{ rem_temp_dir.path }}"
       changed_when: false
 
