@@ -12,10 +12,10 @@ Simple Ansible playbook to gather overcloud nodes' sosreports to a local directo
 ~~~
 
 2. Set the variables as needed at overcloud-gather/overcloud.gather.yml
-  a. Subset of roles or nodes to gather from
-  b. Case number
-  c. Upload if required
-  d. Delete local directory if required
+  - Subset of roles or nodes to gather from
+  - Case number
+  - Upload if required
+  - Delete local directory if required
 
 3. Run playbook passing tripleo-ansible-inventory
 ~~~
